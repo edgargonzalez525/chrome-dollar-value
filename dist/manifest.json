@@ -1,26 +1,33 @@
 {
-    "manifest_version": 2,
-
-    "name": "Chrome Extension (built with TypeScript + React)",
-    "description":
-        "A boilerplate project to quickly build a Chrome extension using TypeScript and React (built using webpack).",
-    "version": "1.0.0",
-
-    "browser_action": {
-        "default_icon": "icon16.png",
-        "default_popup": "popup.html"
-    },
-
-    "background": {
-        "scripts": ["js/eventPage.js"],
-        "persistent": false
-    },
-
-    "icons": {
-        "16": "icon16.png",
-        "48": "icon48.png",
-        "128": "icon128.png"
-    },
-
-    "permissions": []
+  "name": "DollarPrice",
+  "version": "1.0",
+  "description": "Check the dollar value",
+  "manifest_version": 2,
+  "background": {
+    "scripts": [
+      "background.js"
+    ],
+    "persistent": false
+  },
+  "icons": {
+    "16": "images/16_x_16.png",
+    "32": "images/32_x_32.png",
+    "48": "images/48_x_48.png",
+    "128": "images/128_x_128.png"
+  },
+  "permissions": [
+    "declarativeContent",
+    "notifications",
+    "alarms",
+    "https://www.valor-dolar.cl/"
+  ],
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "images/16_x_16.png",
+      "32": "images/32_x_32.png",
+      "48": "images/48_x_48.png",
+      "128": "images/128_x_128.png"
+    }
+  }
 }

@@ -3,13 +3,15 @@
   "version": "1.0.0",
   "description": "A boilerplate project to quickly build a Chrome extension using TypeScript and React (built using webpack).",
   "scripts": {
-    "build": "./node_modules/.bin/webpack",
+    "build": "./node_modules/.bin/webpack --mode production",
     "watch": "./node_modules/.bin/webpack -w"
   },
+  "sideEffects": false,
   "author": "Joe Martella",
   "license": "MIT",
   "devDependencies": {
-    "@types/chrome": "0.0.60",
+    "@types/chrome": "0.0.75",
+    "@types/numeral": "0.0.25",
     "@types/react": "^16.0.40",
     "@types/react-dom": "^16.0.4",
     "css-loader": "^0.28.11",
@@ -19,9 +21,10 @@
     "ts-loader": "^4.0.1",
     "typescript": "^2.7.2",
     "webpack": "^4.1.1",
-    "webpack-cli": "^2.0.12"
+    "webpack-cli": "^3.1.1"
   },
   "dependencies": {
+    "numeral": "^2.0.6",
     "react": "^16.2.0",
     "react-dom": "^16.2.0"
   }

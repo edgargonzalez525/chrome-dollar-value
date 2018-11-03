@@ -5,6 +5,21 @@ interface AppProps {}
 
 interface AppState {}
 
+// @ts-ignore
+const port = chrome.extension.connect({
+  name: 'Sample Communication',
+});
+
+port.postMessage({type: 'getDollarValue'});
+
+port.onMessage.addListener(function (msg) {
+  if (msg.type === 'setDollarValue') {
+
+    document.getElementById('dollar-value').innerHTML = msg.value;
+  }
+});
+
+
 export default class Popup extends React.Component<AppProps, AppState> {
     constructor(props: AppProps, state: AppState) {
         super(props, state);
