@@ -1,19 +1,12 @@
 import * as numeral from 'numeral';
-
-const refreshMinutes = 30;
-let dollarValue = 0;
-
-interface Country {
-  code: string;
-  url: () => string;
-  image: string;
-  parseResponse: (response) => Promise<number>;
-}
+import {Country} from './model/country';
 
 const countries: Country[] = [{
+  id: 1,
   code: 'CLP',
+  name: 'Chile',
   url: function () {
-    return 'https://www.valor-dolar.cl/currencies_rates.json'
+    return 'https://www.valor-dolar.cl/currencies_rates.json';
   },
   image: 'chile.png',
   parseResponse: function (response) {
@@ -39,20 +32,19 @@ function setBadgeIcon(country: Country) {
 
       chrome.browserAction.setIcon({
         imageData: ctx.getImageData(0, 0, 16, 16),
-      })
-    }
+      });
+    };
   };
 }
 
-
-function getDollarValue(): Promise<number> {
+function getDollarValue(country: Country): Promise<number> {
   //const date = new Date();
-  const url = selectedCountry.url();
+  const url = country.url();
   const myRequest = new Request(url);
 
   return fetch(myRequest)
   .then(response => response.json())
-  .then(json => selectedCountry.parseResponse(json))
+  .then(json => country.parseResponse(json));
 
 }
 
@@ -75,41 +67,59 @@ function getBadgeText(value: number): string {
   return numeral(value).format('0a');
 }
 
-
 function updateDollarValue() {
   return new Promise((resolve) => {
-    getDollarValue()
-    .then((value) => {
-      const newDollarValue = value;
-      chrome.browserAction.setBadgeBackgroundColor({color: [0, 0, 0, 20]});
-      chrome.browserAction.setBadgeText({text: getBadgeText(newDollarValue)});
-      console.log(newDollarValue, dollarValue, newDollarValue !== dollarValue);
-      if (newDollarValue !== dollarValue) {
-        new Notification('Dollar Value Changed', {
-          body: newDollarValue.toString(),
-        });
-      }
+    console.log('promise')
+    chrome.storage.sync.get(['dollarValue', 'selectedCountry'], function (result: { dollarValue: number, selectedCountry: number }) {
+      const dollarValue = result.dollarValue || 0;
+      const selectedCountryId = result.selectedCountry || 1;
+      const selectedCountry: Country = countries.find((item) => item.id === selectedCountryId);
+      console.log('value', dollarValue);
+      console.log('country', selectedCountry);
+      getDollarValue(selectedCountry)
+      .then((value) => {
+        const newDollarValue = value;
+        chrome.browserAction.setBadgeBackgroundColor({color: [0, 0, 0, 20]});
+        chrome.browserAction.setBadgeText({text: getBadgeText(newDollarValue)});
 
-      dollarValue = newDollarValue;
-      resolve(dollarValue);
-    })
-    .catch((e) => {
-      console.error(e)
+        // if (newDollarValue !== dollarValue) {
+          new Notification('Dollar Value Changed', <any>{
+            type: 'image',
+            icon: 'images/arrow-down.png',
+            body: newDollarValue.toString(),
+          });
+        // }
+
+        chrome.storage.sync.set({dollarValue: newDollarValue}, function () {
+          console.log('Dollar value is set to ' + value);
+        });
+        resolve(dollarValue);
+      })
+      .catch((e) => {
+        console.error(e);
+      });
     });
+
   });
 
 }
 
-chrome.alarms.create('updateDollar', {
-  periodInMinutes: refreshMinutes,
-});
+chrome.storage.sync.get(['refreshMinutes', 'selectedCountry'], function (result: { refreshMinutes: number, selectedCountry: number }) {
+  const refreshMinutes = result.refreshMinutes || 30;
+  const selectedCountryId = result.selectedCountry || 1;
+  const selectedCountry: Country = countries.find((item) => item.id === selectedCountryId);
 
-chrome.alarms.onAlarm.addListener(() => {
-  updateDollarValue();
-});
+  chrome.alarms.create('updateDollar', {
+    periodInMinutes: refreshMinutes,
+  });
 
-updateDollarValue();
-setBadgeIcon(selectedCountry)
+  chrome.alarms.onAlarm.addListener(() => {
+    updateDollarValue().then(() => {});
+  });
+
+  updateDollarValue().then(() => {});
+  setBadgeIcon(selectedCountry);
+});
 
 // @ts-ignore
 chrome.extension.onConnect.addListener(function (port) {
@@ -120,6 +130,7 @@ chrome.extension.onConnect.addListener(function (port) {
         port.postMessage({
           type: 'setDollarValue',
           value: value,
+          country: selectedCountry,
         });
       });
     }

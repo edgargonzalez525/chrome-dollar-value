@@ -19,6 +19,7 @@
     "declarativeContent",
     "notifications",
     "alarms",
+    "storage",
     "https://www.valor-dolar.cl/"
   ],
   "browser_action": {

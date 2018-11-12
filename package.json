@@ -1,5 +1,5 @@
 {
-  "name": "chrome-extension-react-typescript-boilerplate",
+  "name": "dollar-value",
   "version": "1.0.0",
   "description": "A boilerplate project to quickly build a Chrome extension using TypeScript and React (built using webpack).",
   "scripts": {
@@ -7,7 +7,7 @@
     "watch": "./node_modules/.bin/webpack -w"
   },
   "sideEffects": false,
-  "author": "Joe Martella",
+  "author": "Edgar Gonzalez",
   "license": "MIT",
   "devDependencies": {
     "@types/chrome": "0.0.75",
