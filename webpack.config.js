@@ -4,6 +4,7 @@ module.exports = {
   mode: 'development',
   entry: {
     popup: path.join(__dirname, 'src/popup/index.tsx'),
+    options: path.join(__dirname, 'src/options/index.tsx'),
     background: path.join(__dirname, 'src/background.ts'),
   },
   devtool: 'inline-source-map',

@@ -32,7 +32,6 @@ export default class Popup extends React.Component<AppProps, AppState> {
 
     port.onMessage.addListener(function (msg) {
       if (msg.type === 'setDollarValue') {
-        console.log(msg)
         self.setState({
           dollarValue: msg.value,
           country: msg.country,

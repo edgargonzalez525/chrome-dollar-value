@@ -1,22 +1,6 @@
 import * as numeral from 'numeral';
 import {Country} from './model/country';
-
-const countries: Country[] = [{
-  id: 1,
-  code: 'CLP',
-  name: 'Chile',
-  url: function () {
-    return 'https://www.valor-dolar.cl/currencies_rates.json';
-  },
-  image: 'chile.png',
-  parseResponse: function (response) {
-    return new Promise((resolve) => {
-      resolve(Number(response.currencies.find((currency) => currency.code === this.code).rate));
-    });
-  },
-}];
-
-let selectedCountry = countries[0];
+import {CountryService} from './services/country.service';
 
 function setBadgeIcon(country: Country) {
   const c: HTMLCanvasElement = document.createElement('canvas');
@@ -69,34 +53,42 @@ function getBadgeText(value: number): string {
 
 function updateDollarValue() {
   return new Promise((resolve) => {
-    console.log('promise')
-    chrome.storage.sync.get(['dollarValue', 'selectedCountry'], function (result: { dollarValue: number, selectedCountry: number }) {
-      const dollarValue = result.dollarValue || 0;
-      const selectedCountryId = result.selectedCountry || 1;
-      const selectedCountry: Country = countries.find((item) => item.id === selectedCountryId);
-      console.log('value', dollarValue);
-      console.log('country', selectedCountry);
-      getDollarValue(selectedCountry)
-      .then((value) => {
-        const newDollarValue = value;
-        chrome.browserAction.setBadgeBackgroundColor({color: [0, 0, 0, 20]});
-        chrome.browserAction.setBadgeText({text: getBadgeText(newDollarValue)});
+    CountryService.getCountries()
+    .subscribe((countries: Country[]) => {
+      chrome.storage.sync.get(['dollarValue', 'selectedCountry'], function (result: { dollarValue: number, selectedCountry: number }) {
+        const dollarValue = result.dollarValue || 0;
+        const selectedCountryId = result.selectedCountry || 1;
+        const selectedCountry: Country = countries.find((item) => item.id === selectedCountryId);
 
-        // if (newDollarValue !== dollarValue) {
-          new Notification('Dollar Value Changed', <any>{
-            type: 'image',
-            icon: 'images/arrow-down.png',
-            body: newDollarValue.toString(),
+        getDollarValue(selectedCountry)
+        .then((value) => {
+          const newDollarValue = value;
+          chrome.browserAction.setBadgeBackgroundColor({color: [0, 0, 0, 20]});
+          chrome.browserAction.setBadgeText({text: getBadgeText(newDollarValue)});
+
+          if (newDollarValue !== dollarValue) {
+            new Notification('Dollar Value Changed', <any>{
+              type: 'image',
+              icon: dollarValue !== 0 ?
+                (newDollarValue > dollarValue ?
+                  'images/arrow-up.png' :
+                  'images/arrow-down.png') :
+                null,
+              body: newDollarValue.toString(),
+            });
+          }
+
+          chrome.storage.sync.set({dollarValue: newDollarValue}, function () {
+            console.log('Dollar value is set to ' + value);
           });
-        // }
-
-        chrome.storage.sync.set({dollarValue: newDollarValue}, function () {
-          console.log('Dollar value is set to ' + value);
+          resolve({
+            dollarValue,
+            selectedCountry,
+          });
+        })
+        .catch((e) => {
+          console.error(e);
         });
-        resolve(dollarValue);
-      })
-      .catch((e) => {
-        console.error(e);
       });
     });
 
@@ -104,35 +96,53 @@ function updateDollarValue() {
 
 }
 
-chrome.storage.sync.get(['refreshMinutes', 'selectedCountry'], function (result: { refreshMinutes: number, selectedCountry: number }) {
-  const refreshMinutes = result.refreshMinutes || 30;
-  const selectedCountryId = result.selectedCountry || 1;
-  const selectedCountry: Country = countries.find((item) => item.id === selectedCountryId);
+function initApp() {
+  console.log('INIT');
+  chrome.storage.sync.get(['refreshMinutes', 'selectedCountry'], function (result: { refreshMinutes: number, selectedCountry: number }) {
+    CountryService.getCountries()
+    .subscribe((countries: Country[]) => {
+      const refreshMinutes = result.refreshMinutes || 30;
+      const selectedCountryId = result.selectedCountry || 1;
+      const selectedCountry: Country = countries.find((item) => item.id === selectedCountryId);
 
-  chrome.alarms.create('updateDollar', {
-    periodInMinutes: refreshMinutes,
+      chrome.alarms.create('updateDollar', {
+        periodInMinutes: refreshMinutes,
+      });
+
+      chrome.alarms.onAlarm.addListener(() => {
+        updateDollarValue();
+      });
+
+      updateDollarValue();
+      setBadgeIcon(selectedCountry);
+    });
+
   });
+}
 
-  chrome.alarms.onAlarm.addListener(() => {
-    updateDollarValue().then(() => {});
-  });
-
-  updateDollarValue().then(() => {});
-  setBadgeIcon(selectedCountry);
-});
+initApp();
 
 // @ts-ignore
 chrome.extension.onConnect.addListener(function (port) {
   console.log('Connected .....');
   port.onMessage.addListener(function (msg) {
     if (msg.type === 'getDollarValue') {
-      updateDollarValue().then((value) => {
+      updateDollarValue().then(({dollarValue, selectedCountry}) => {
         port.postMessage({
           type: 'setDollarValue',
-          value: value,
+          value: dollarValue,
           country: selectedCountry,
         });
       });
     }
   });
+});
+
+chrome.storage.onChanged.addListener(function (changes) {
+  // do not re init app when saving dollar value
+  if (changes.dollarValue === undefined) {
+    chrome.alarms.clearAll(() => {
+      initApp();
+    });
+  }
 });

@@ -20,7 +20,8 @@
     "notifications",
     "alarms",
     "storage",
-    "https://www.valor-dolar.cl/"
+    "https://www.valor-dolar.cl/",
+    "http://app.docm.co/"
   ],
   "browser_action": {
     "default_popup": "popup.html",
@@ -30,5 +31,6 @@
       "48": "images/48_x_48.png",
       "128": "images/128_x_128.png"
     }
-  }
+  },
+  "options_page": "options.html"
 }
