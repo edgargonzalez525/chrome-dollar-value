@@ -8,7 +8,7 @@ interface AppProps {
 
 interface AppState {
   refreshMinutes: string;
-  selectedCountryId: string;
+  country: Country;
   countries: Country[];
   loading: boolean;
 }
@@ -16,7 +16,7 @@ interface AppState {
 export default class Options extends React.Component<AppProps, AppState> {
   state: AppState = {
     refreshMinutes: '',
-    selectedCountryId: '',
+    country: null,
     countries: [],
     loading: false,
   };
@@ -30,13 +30,19 @@ export default class Options extends React.Component<AppProps, AppState> {
     let self = this;
     CountryService.getCountries()
     .subscribe((countries: Country[]) => {
-      chrome.storage.sync.get(['refreshMinutes', 'selectedCountry'], function (result: { refreshMinutes: number, selectedCountry: number }) {
+      chrome.storage.sync.get(['refreshMinutes', 'country'], function (result: { refreshMinutes: number, country: string }) {
         const refreshMinutes = result.refreshMinutes || 30;
-        const selectedCountryId = result.selectedCountry || 1;
-
+        const selectedCountry: Country = result.country ?
+          JSON.parse(result.country) :
+          CountryService.DEFAULT_COUNTRY;
+        console.log({
+          refreshMinutes: refreshMinutes.toString(),
+          country: selectedCountry,
+          countries: countries,
+        });
         self.setState({
           refreshMinutes: refreshMinutes.toString(),
-          selectedCountryId: selectedCountryId.toString(),
+          country: selectedCountry,
           countries: countries,
         });
       });
@@ -50,7 +56,7 @@ export default class Options extends React.Component<AppProps, AppState> {
     self.setState({loading: true});
     chrome.storage.sync.set({
       refreshMinutes: parseInt(this.state.refreshMinutes),
-      selectedCountry: parseInt(this.state.selectedCountryId),
+      country: JSON.stringify(this.state.country),
     }, function () {
       self.setState({loading: false});
     });
@@ -77,9 +83,17 @@ export default class Options extends React.Component<AppProps, AppState> {
               </label>
               <div className="col-sm-8">
                 <select id="inputState" className="form-control"
-                        onChange={($event) => this.setState({selectedCountryId: $event.target.value})}>
+                        value={this.state.country ? this.state.country.alpha2Code : ''}
+                        onChange={($event) => {
+                          const alphaCode = $event.target.value;
+                          this.setState((state) => {
+                            return {
+                              country: state.countries.find(item => item.alpha2Code === alphaCode),
+                            };
+                          });
+                        }}>
                   {this.state.countries.map((country, i) => {
-                    return <option key={i} value={country.id}>{country.name}</option>;
+                    return <option key={i} value={country.alpha2Code}>{country.name}</option>;
                   })}
                 </select>
               </div>

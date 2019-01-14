@@ -21,7 +21,8 @@
     "alarms",
     "storage",
     "https://www.valor-dolar.cl/",
-    "http://app.docm.co/"
+    "http://app.docm.co/",
+    "https://www.countryflags.io/"
   ],
   "browser_action": {
     "default_popup": "popup.html",

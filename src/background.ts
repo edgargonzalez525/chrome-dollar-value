@@ -7,7 +7,8 @@ function setBadgeIcon(country: Country) {
   const ctx = c.getContext('2d');
   const imageObj1 = new Image();
   const imageObj2 = new Image();
-  imageObj1.src = `images/flags/${country.image}`;
+  imageObj1.src = `https://www.countryflags.io/${country.alpha2Code}/flat/16.png`;
+  imageObj1.crossOrigin = 'Anonymous';
   imageObj1.onload = function () {
     ctx.drawImage(imageObj1, 0, 0, 16, 16);
     imageObj2.src = 'images/dollar-sign.png';
@@ -22,14 +23,24 @@ function setBadgeIcon(country: Country) {
 }
 
 function getDollarValue(country: Country): Promise<number> {
-  //const date = new Date();
-  const url = country.url();
-  const myRequest = new Request(url);
+  const currency: string = country.currencies[country.currencies.length - 1];
+  const url = 'https://community-neutrino-currency-conversion.p.rapidapi.com/convert';
+  const body = new URLSearchParams();
+  body.append('from-type', 'USD');
+  body.append('from-value', '1');
+  body.append('to-type', currency);
+  const myRequest = new Request(url, {
+    method: 'POST',
+    headers: {
+      'X-RapidAPI-Key': '9659549bb5msh6c4a4a8817647f5p1c6409jsn07ef710fce8d',
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: body.toString(),
+  });
 
   return fetch(myRequest)
   .then(response => response.json())
-  .then(json => country.parseResponse(json));
-
+  .then((response: { result: string }) => Number(response.result));
 }
 
 function getBadgeText(value: number): string {
@@ -53,70 +64,70 @@ function getBadgeText(value: number): string {
 
 function updateDollarValue() {
   return new Promise((resolve) => {
-    CountryService.getCountries()
-    .subscribe((countries: Country[]) => {
-      chrome.storage.sync.get(['dollarValue', 'selectedCountry'], function (result: { dollarValue: number, selectedCountry: number }) {
-        const dollarValue = result.dollarValue || 0;
-        const selectedCountryId = result.selectedCountry || 1;
-        const selectedCountry: Country = countries.find((item) => item.id === selectedCountryId);
+    chrome.storage.sync.get(['dollarValue', 'country'], function (result: { dollarValue: number, country: string }) {
+      const dollarValue = result.dollarValue || 0;
+      const selectedCountry: Country = result.country ?
+        JSON.parse(result.country) :
+        CountryService.DEFAULT_COUNTRY;
 
-        getDollarValue(selectedCountry)
-        .then((value) => {
-          const newDollarValue = value;
-          chrome.browserAction.setBadgeBackgroundColor({color: [0, 0, 0, 20]});
-          chrome.browserAction.setBadgeText({text: getBadgeText(newDollarValue)});
+      getDollarValue(selectedCountry)
+      .then((value) => {
+        const newDollarValue = value;
+        const state = {
+          dollarValue: newDollarValue,
+          lastChecked: new Date().toISOString(),
+        };
+        chrome.browserAction.setBadgeBackgroundColor({color: [0, 0, 0, 20]});
+        chrome.browserAction.setBadgeText({text: getBadgeText(newDollarValue)});
 
-          if (newDollarValue !== dollarValue) {
-            new Notification('Dollar Value Changed', <any>{
-              type: 'image',
-              icon: dollarValue !== 0 ?
-                (newDollarValue > dollarValue ?
-                  'images/arrow-up.png' :
-                  'images/arrow-down.png') :
-                null,
-              body: newDollarValue.toString(),
-            });
-          }
-
-          chrome.storage.sync.set({dollarValue: newDollarValue}, function () {
-            console.log('Dollar value is set to ' + value);
+        if (newDollarValue !== dollarValue) {
+          console.log(newDollarValue, dollarValue);
+          state['lastUpdated'] = new Date().toISOString();
+          new Notification('Dollar Value Changed', <any>{
+            type: 'image',
+            icon: dollarValue !== 0 ?
+              (newDollarValue > dollarValue ?
+                'images/arrow-up.png' :
+                'images/arrow-down.png') :
+              null,
+            body: newDollarValue.toFixed(2),
           });
-          resolve({
-            dollarValue,
-            selectedCountry,
-          });
-        })
-        .catch((e) => {
-          console.error(e);
+        }
+
+        chrome.storage.sync.set(state, function () {
+          console.log('Dollar value is set to ' + value);
         });
+        resolve({
+          dollarValue,
+          selectedCountry,
+        });
+      })
+      .catch((e) => {
+        console.error(e);
       });
     });
-
   });
 
 }
 
 function initApp() {
   console.log('INIT');
-  chrome.storage.sync.get(['refreshMinutes', 'selectedCountry'], function (result: { refreshMinutes: number, selectedCountry: number }) {
-    CountryService.getCountries()
-    .subscribe((countries: Country[]) => {
-      const refreshMinutes = result.refreshMinutes || 30;
-      const selectedCountryId = result.selectedCountry || 1;
-      const selectedCountry: Country = countries.find((item) => item.id === selectedCountryId);
+  chrome.storage.sync.get(['refreshMinutes', 'country'], function (result: { refreshMinutes: number, country: string }) {
+    const refreshMinutes = result.refreshMinutes || 30;
+    const selectedCountry: Country = result.country ?
+      JSON.parse(result.country) :
+      CountryService.DEFAULT_COUNTRY;
 
-      chrome.alarms.create('updateDollar', {
-        periodInMinutes: refreshMinutes,
-      });
-
-      chrome.alarms.onAlarm.addListener(() => {
-        updateDollarValue();
-      });
-
-      updateDollarValue();
-      setBadgeIcon(selectedCountry);
+    chrome.alarms.create('updateDollar', {
+      periodInMinutes: refreshMinutes,
     });
 
+    chrome.alarms.onAlarm.addListener(() => {
+      updateDollarValue();
+    });
+
+    updateDollarValue();
+    setBadgeIcon(selectedCountry);
   });
 }
 
@@ -138,9 +149,9 @@ chrome.extension.onConnect.addListener(function (port) {
   });
 });
 
-chrome.storage.onChanged.addListener(function (changes) {
-  // do not re init app when saving dollar value
-  if (changes.dollarValue === undefined) {
+chrome.storage.onChanged.addListener(function (changes: { country }) {
+  // re-init app when country changes
+  if (changes.country) {
     chrome.alarms.clearAll(() => {
       initApp();
     });
