@@ -24,23 +24,21 @@ function setBadgeIcon(country: Country) {
 
 function getDollarValue(country: Country): Promise<number> {
   const currency: string = country.currencies[country.currencies.length - 1];
-  const url = 'https://community-neutrino-currency-conversion.p.rapidapi.com/convert';
-  const body = new URLSearchParams();
-  body.append('from-type', 'USD');
-  body.append('from-value', '1');
-  body.append('to-type', currency);
+
+  const url = `https://okapi-currency-exchange-rates-v1.p.rapidapi.com/finance/lookup/currency?currency=USD%2C${currency}&value=1`;
   const myRequest = new Request(url, {
-    method: 'POST',
+    method: 'GET',
     headers: {
       'X-RapidAPI-Key': '9659549bb5msh6c4a4a8817647f5p1c6409jsn07ef710fce8d',
-      'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: body.toString(),
   });
 
   return fetch(myRequest)
   .then(response => response.json())
-  .then((response: { result: string }) => Number(response.result));
+  .then((response: { currency: string, value: number }[]) => {
+    const selected = response.find((item) => item.currency === currency);
+    return selected ? selected.value : 0;
+  });
 }
 
 function getBadgeText(value: number): string {
