@@ -75,7 +75,7 @@ export default class Popup extends React.Component<AppProps, AppState> {
             <h2 className={'m-0'}>{this.state.dollarValue.toFixed(2)}</h2>
             {this.state.lastChecked ?
               <small className={'text-muted'}>
-                Last change &nbsp;
+                {'Last changed: '}
                 {this.getDateStr(this.state.lastUpdated)}
               </small> :
               ''}

@@ -70,7 +70,7 @@ export default class Options extends React.Component<AppProps, AppState> {
             <a className="navbar-brand" href="#">
               <img src="/images/32_x_32.png"
                    className="d-inline-block align-top" alt=""/>
-              <b className={'ml-3'}>DollarPrice</b>
+              <b className={'ml-3'}>Dollar Exchange Rate</b>
             </a>
           </div>
         </nav>

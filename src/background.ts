@@ -79,16 +79,17 @@ function updateDollarValue() {
         chrome.browserAction.setBadgeText({text: getBadgeText(newDollarValue)});
 
         if (newDollarValue !== dollarValue) {
-          console.log(newDollarValue, dollarValue);
+          console.log('dollar rate changed', newDollarValue, dollarValue);
           state['lastUpdated'] = new Date().toISOString();
           new Notification('Dollar Value Changed', <any>{
-            type: 'image',
+            type: 'basic',
             icon: dollarValue !== 0 ?
               (newDollarValue > dollarValue ?
                 'images/arrow-up.png' :
                 'images/arrow-down.png') :
               null,
             body: newDollarValue.toFixed(2),
+            tag: new Date().getTime(),
           });
         }
 
