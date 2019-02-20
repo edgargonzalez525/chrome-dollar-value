@@ -28,7 +28,7 @@ export default class Options extends React.Component<AppProps, AppState> {
     country: null,
     countries: [],
     loading: false,
-    showNotifications: true
+    showNotifications: true,
   };
 
   constructor(props: AppProps) {
@@ -48,7 +48,7 @@ export default class Options extends React.Component<AppProps, AppState> {
           refreshMinutes: refreshMinutes.toString(),
           country: selectedCountry,
           countries: countries,
-          showNotifications
+          showNotifications,
         });
       });
     });
@@ -63,7 +63,7 @@ export default class Options extends React.Component<AppProps, AppState> {
     chrome.storage.sync.set({
       refreshMinutes: parseInt(refreshMinutes, 10),
       country: JSON.stringify(country),
-      showNotifications
+      showNotifications,
     }, () => {
       this.setState({ loading: false });
     });
@@ -114,7 +114,7 @@ export default class Options extends React.Component<AppProps, AppState> {
                 <input type="number" className="form-control" id="inputEmail3"
                        required={true}
                        value={refreshMinutes}
-                       onChange={($event) => this.setState({refreshMinutes: $event.target.value || ''})}/>
+                       onChange={($event) => this.setState({ refreshMinutes: $event.target.value || '' })}/>
               </div>
             </div>
             <div className="form-group row">

@@ -76,8 +76,8 @@ function updateDollarValue() {
           dollarValue: newDollarValue,
           lastChecked: new Date().toISOString(),
         };
-        chrome.browserAction.setBadgeBackgroundColor({color: [0, 0, 0, 20]});
-        chrome.browserAction.setBadgeText({text: getBadgeText(newDollarValue)});
+        chrome.browserAction.setBadgeBackgroundColor({ color: [0, 0, 0, 20] });
+        chrome.browserAction.setBadgeText({ text: getBadgeText(newDollarValue) });
 
         if (result.showNotifications && newDollarValue !== dollarValue) {
           console.log('dollar rate changed', newDollarValue, dollarValue);
@@ -138,7 +138,7 @@ chrome.extension.onConnect.addListener(function (port) {
   console.log('Connected .....');
   port.onMessage.addListener(function (msg) {
     if (msg.type === 'getDollarValue') {
-      updateDollarValue().then(({dollarValue, selectedCountry}) => {
+      updateDollarValue().then(({ dollarValue, selectedCountry }) => {
         port.postMessage({
           type: 'setDollarValue',
           value: dollarValue,
