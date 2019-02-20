@@ -1,6 +1,7 @@
 import * as numeral from 'numeral';
-import {Country} from './model/country';
-import {CountryService} from './services/country.service';
+
+import { Country } from './model/country';
+import { CountryService } from './services/country.service';
 
 function setBadgeIcon(country: Country) {
   const c: HTMLCanvasElement = document.createElement('canvas');
@@ -62,7 +63,7 @@ function getBadgeText(value: number): string {
 
 function updateDollarValue() {
   return new Promise((resolve) => {
-    chrome.storage.sync.get(['dollarValue', 'country'], function (result: { dollarValue: number, country: string }) {
+    chrome.storage.sync.get(['dollarValue', 'country', 'showNotifications'], function (result: { dollarValue: number, country: string, showNotifications: boolean }) {
       const dollarValue = result.dollarValue || 0;
       const selectedCountry: Country = result.country ?
         JSON.parse(result.country) :
@@ -78,7 +79,7 @@ function updateDollarValue() {
         chrome.browserAction.setBadgeBackgroundColor({color: [0, 0, 0, 20]});
         chrome.browserAction.setBadgeText({text: getBadgeText(newDollarValue)});
 
-        if (newDollarValue !== dollarValue) {
+        if (result.showNotifications && newDollarValue !== dollarValue) {
           console.log('dollar rate changed', newDollarValue, dollarValue);
           state['lastUpdated'] = new Date().toISOString();
           new Notification('Dollar Value Changed', <any>{
