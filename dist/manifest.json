@@ -1,6 +1,6 @@
 {
   "name": "Dollar Exchange Rate",
-  "version": "1.0",
+  "version": "1.1.0",
   "description": "Check the dollar exchange rate in your country currency",
   "manifest_version": 2,
   "background": {
