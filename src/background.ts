@@ -26,19 +26,19 @@ function setBadgeIcon(country: Country) {
 function getDollarValue(country: Country): Promise<number> {
   const currency: string = country.currencies[country.currencies.length - 1];
 
-  const url = `https://okapi-currency-exchange-rates-v1.p.rapidapi.com/finance/lookup/currency?currency=USD%2C${currency}&value=1`;
+  const url = `https://currency-exchange.p.rapidapi.com/exchange?q=1.0&from=USD&to=${currency}`;
   const myRequest = new Request(url, {
     method: 'GET',
     headers: {
+      'X-RapidAPI-Host': 'currency-exchange.p.rapidapi.com',
       'X-RapidAPI-Key': '9659549bb5msh6c4a4a8817647f5p1c6409jsn07ef710fce8d',
     },
   });
 
   return fetch(myRequest)
-  .then(response => response.json())
-  .then((response: { currency: string, value: number }[]) => {
-    const selected = response.find((item) => item.currency === currency);
-    return selected ? selected.value : 0;
+  .then(response => response.text())
+  .then((response: string) => {
+    return response ? parseFloat(response) : 0;
   });
 }
 
@@ -64,6 +64,8 @@ function getBadgeText(value: number): string {
 function updateDollarValue() {
   return new Promise((resolve) => {
     chrome.storage.sync.get(['dollarValue', 'country', 'showNotifications'], function (result: { dollarValue: number, country: string, showNotifications: boolean }) {
+
+      console.log(result);
       const dollarValue = result.dollarValue || 0;
       const selectedCountry: Country = result.country ?
         JSON.parse(result.country) :
@@ -79,19 +81,23 @@ function updateDollarValue() {
         chrome.browserAction.setBadgeBackgroundColor({ color: [0, 0, 0, 20] });
         chrome.browserAction.setBadgeText({ text: getBadgeText(newDollarValue) });
 
-        if (result.showNotifications && newDollarValue !== dollarValue) {
+        if (newDollarValue !== dollarValue) {
           console.log('dollar rate changed', newDollarValue, dollarValue);
           state['lastUpdated'] = new Date().toISOString();
-          new Notification('Dollar Value Changed', <any>{
-            type: 'basic',
-            icon: dollarValue !== 0 ?
-              (newDollarValue > dollarValue ?
-                'images/arrow-up.png' :
-                'images/arrow-down.png') :
-              null,
-            body: newDollarValue.toFixed(2),
-            tag: new Date().getTime(),
-          });
+
+          if (result.showNotifications) {
+            new Notification('Dollar Value Changed', <any>{
+              type: 'basic',
+              icon: dollarValue !== 0 ?
+                (newDollarValue > dollarValue ?
+                  'images/arrow-up.png' :
+                  'images/arrow-down.png') :
+                null,
+              body: newDollarValue.toFixed(2),
+              tag: new Date().getTime(),
+            });
+          }
+
         }
 
         chrome.storage.sync.set(state, function () {

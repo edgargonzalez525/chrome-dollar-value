@@ -1,7 +1,7 @@
 import * as React from 'react';
 import './Popup.scss';
-import {Country} from '../model/country';
-import {CountryService} from '../services/country.service';
+import { Country } from '../model/country';
+import { CountryService } from '../services/country.service';
 
 interface AppProps {
 }
@@ -40,12 +40,12 @@ export default class Popup extends React.Component<AppProps, AppState> {
         self.setState({
           dollarValue: dollarValue,
           country: selectedCountry,
-          lastChecked: new Date(result.lastChecked),
-          lastUpdated: new Date(result.lastUpdated),
+          lastChecked: result.lastChecked ? new Date(result.lastChecked) : null,
+          lastUpdated: result.lastUpdated ? new Date(result.lastUpdated) : null,
         });
       });
 
-    port.postMessage({type: 'getDollarValue'});
+    port.postMessage({ type: 'getDollarValue' });
 
     port.onMessage.addListener(function (msg) {
       if (msg.type === 'setDollarValue') {
@@ -58,22 +58,22 @@ export default class Popup extends React.Component<AppProps, AppState> {
   }
 
   getDateStr(date: Date) {
-    return `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+    return `${(date || new Date()).toLocaleDateString()} ${date.toLocaleTimeString()}`;
   }
 
   render() {
     const country: Country = this.state.country;
     return (
       <div className={'d-flex align-items-center justify-content-center p-4'}
-           style={{minWidth: 300}}>
+           style={{ minWidth: 300 }}>
         {this.state.country ?
           <div className={'text-center'}>
             <div className={'text-muted'}>
               Dollar rate in
-              <img src={`https://www.countryflags.io/${country.alpha2Code}/flat/16.png`} style={{margin: '0 10px'}}/>
+              <img src={`https://www.countryflags.io/${country.alpha2Code}/flat/16.png`} style={{ margin: '0 10px' }}/>
               {this.state.country.name}</div>
             <h2 className={'m-0'}>{this.state.dollarValue.toFixed(2)}</h2>
-            {this.state.lastChecked ?
+            {this.state.lastUpdated ?
               <small className={'text-muted'}>
                 {'Last changed: '}
                 {this.getDateStr(this.state.lastUpdated)}
